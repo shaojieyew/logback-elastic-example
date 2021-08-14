@@ -1,0 +1,56 @@
+version: '3'
+services:
+
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    container_name: elastic
+    environment:
+      - "discovery.type=single-node"
+      - ELASTIC_PASSWORD=changeme
+      - xpack.security.enabled=true
+      - xpack.security.authc.api_key.enabled=true
+    volumes:
+      - C:/Users/YSJ/Desktop/New folder/es-data:/usr/share/elasticsearch/data:rw
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - hello-world-network
+    restart: unless-stopped
+    
+  kibana:
+    container_name: kibana
+    depends_on:
+      - elastic
+    environment:
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=changeme
+    image: docker.elastic.co/kibana/kibana:7.6.1
+    networks:
+      - hello-world-network
+    ports:
+      - "5601:5601"
+    links:
+      - elastic:elasticsearch
+    restart: unless-stopped
+    
+  localhost:
+    depends_on:
+      - elastic
+    image: localhost:5000/demo/hello-word:0.0.1-SNAPSHOT
+    container_name: hello-world
+    environment:
+      - "APPLICATION_ENV=prod"
+      - "ELASTIC_HOST=elastic:9200"
+      - "ELASTICSEARCH_TOKEN=ZWxhc3RpYzpjaGFuZ2VtZQ=="
+      - "APP_NAME=HelloWorldApp"
+    networks:
+      - hello-world-network
+    links:
+      - elastic
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+networks:
+  hello-world-network:
+    driver: bridge
